@@ -1,0 +1,250 @@
+---
+import { LogIn, PackageCheck, ShieldCheck, SlidersHorizontal, UserRound } from "@lucide/astro";
+import AppLayout from "../layouts/AppLayout.astro";
+
+const colors = ["#2f5d50", "#b06448", "#496a8f", "#7d4e3c", "#23272a", "#9a7a35"];
+---
+
+<AppLayout title="NCW | Conta">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Conta</p>
+      <h1>Conta, compras e preferencias.</h1>
+      <p class="lead">Login simples, historico de compras, privacidade e personalizacao. Cartao e dados pessoais ficam fora daqui.</p>
+    </div>
+  </header>
+
+  <section class="account-grid">
+    <div class="account-stack">
+      <section class="panel section-card login-card" data-auth-panel>
+        <div class="login-art">
+          <img src="https://images.pexels.com/photos/7671168/pexels-photo-7671168.jpeg?auto=compress&cs=tinysrgb&w=900" alt="Editorial de moda NCW" loading="lazy" />
+        </div>
+        <div>
+          <h2>Entrar ou criar conta</h2>
+          <button class="btn google-btn" type="button" data-google-login>
+            <span class="google-mark" aria-hidden="true">G</span>
+            Continuar com Google
+          </button>
+          <div class="divider"><span>ou use a conta demo</span></div>
+          <form class="form-grid" data-login-form>
+            <label>Login<input class="field" name="loginName" autocomplete="username" placeholder="ex: thurz" required /></label>
+            <label>Senha<input class="field" name="password" type="password" autocomplete="current-password" placeholder="Senha" required /></label>
+            <label>Nome escolhido<input class="field" name="displayName" autocomplete="nickname" placeholder="Como voce quer aparecer" /></label>
+            <div class="toolbar">
+              <button class="btn primary" type="submit" data-auth-action="login"><LogIn size={18} /> Entrar</button>
+              <button class="btn" type="submit" data-auth-action="create"><UserRound size={18} /> Criar</button>
+            </div>
+          </form>
+          <p class="notice" data-auth-message style="margin-top:14px;">Conta demo: login demo, senha demo123.</p>
+        </div>
+      </section>
+
+      <section class="panel section-card">
+        <h2>Compras</h2>
+        <div class="cart-list" data-purchases>
+          <p class="muted">Entre em uma conta para carregar suas compras.</p>
+        </div>
+      </section>
+
+      <section class="panel section-card">
+        <h2>Looks salvos</h2>
+        <div class="catalog-grid compact" data-saved-looks>
+          <p class="muted">Nenhum look salvo ainda.</p>
+        </div>
+      </section>
+    </div>
+
+    <aside class="account-stack">
+      <section class="panel section-card">
+        <h2>Perfil</h2>
+        <div class="payment-card">
+          <div>
+            <strong data-profile-name>Sem conta ativa</strong>
+            <p class="muted" data-profile-login style="margin:6px 0 0;">Use login para salvar preferencias e compras.</p>
+          </div>
+          <ShieldCheck size={22} />
+        </div>
+        <button class="btn danger" type="button" data-change-account style="width:100%; margin-top:12px;">Mudar de conta</button>
+      </section>
+
+      <section class="panel section-card">
+        <h2>Personalizacao</h2>
+        <form class="form-grid" data-settings-form>
+          <label>Nome escolhido<input class="field" name="displayName" placeholder="Nome publico no site" /></label>
+          <label>Layout
+            <select name="layout">
+              <option value="market">Market</option>
+              <option value="studio">Studio</option>
+              <option value="compact">Compacto</option>
+            </select>
+          </label>
+          <label>Privacidade
+            <select name="privacy">
+              <option value="private">Privado</option>
+              <option value="friends">Somente convidados</option>
+              <option value="public">Publico</option>
+            </select>
+          </label>
+
+          <div>
+            <p class="muted" style="margin:0 0 10px;">Tema visual</p>
+            <div class="theme-grid" data-theme-options>
+              <button class="theme-option" type="button" data-theme-choice="clean">
+                <span class="theme-preview"><span style="--preview-color:#f3f0ea"></span><span style="--preview-color:#fffdf8"></span><span style="--preview-color:#23272a"></span></span>
+                <strong>Clean</strong>
+              </button>
+              <button class="theme-option" type="button" data-theme-choice="studio">
+                <span class="theme-preview"><span style="--preview-color:#eef1ef"></span><span style="--preview-color:#2f5d50"></span><span style="--preview-color:#162422"></span></span>
+                <strong>Studio</strong>
+              </button>
+              <button class="theme-option" type="button" data-theme-choice="night">
+                <span class="theme-preview"><span style="--preview-color:#111517"></span><span style="--preview-color:#1b2124"></span><span style="--preview-color:#f3f0ea"></span></span>
+                <strong>Night</strong>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <p class="muted" style="margin:6px 0 10px;">Cor de destaque</p>
+            <div class="color-grid">
+              {colors.map((color) => <button class="color-option" type="button" data-accent-choice={color} style={`--swatch:${color}`} aria-label={`Usar cor ${color}`}></button>)}
+            </div>
+          </div>
+
+          <button class="btn primary" type="submit"><SlidersHorizontal size={18} /> Salvar preferencias</button>
+        </form>
+      </section>
+    </aside>
+  </section>
+
+  <script>
+    const loginForm = document.querySelector("[data-login-form]");
+    const settingsForm = document.querySelector("[data-settings-form]");
+    const authMessage = document.querySelector("[data-auth-message]");
+    const purchasesBox = document.querySelector("[data-purchases]");
+    const savedLooksBox = document.querySelector("[data-saved-looks]");
+    const profileName = document.querySelector("[data-profile-name]");
+    const profileLogin = document.querySelector("[data-profile-login]");
+    let activeUser = null;
+    let activeTheme = localStorage.getItem("ncw-theme") || "clean";
+    let activeAccent = localStorage.getItem("ncw-accent") || "#2f5d50";
+
+    function setMessage(text) {
+      authMessage.textContent = text;
+    }
+
+    function selectTheme(theme) {
+      activeTheme = theme;
+      document.documentElement.dataset.theme = theme;
+      document.querySelectorAll("[data-theme-choice]").forEach((button) => button.classList.toggle("active", button.dataset.themeChoice === theme));
+    }
+
+    function selectAccent(color) {
+      activeAccent = color;
+      document.documentElement.style.setProperty("--accent", color);
+      document.querySelectorAll("[data-accent-choice]").forEach((button) => button.classList.toggle("active", button.dataset.accentChoice === color));
+    }
+
+    function applyUser(user) {
+      activeUser = user;
+      NCW.setCurrentUser(user);
+      selectTheme(user.theme || "clean");
+      selectAccent(user.accent || "#2f5d50");
+      settingsForm.displayName.value = user.displayName || "";
+      settingsForm.layout.value = user.layout || "market";
+      settingsForm.privacy.value = user.privacy || "private";
+      profileName.textContent = user.displayName || user.loginName;
+      profileLogin.textContent = `@${user.loginName} · ${user.privacy || "private"}`;
+      setMessage("Conta ativa. Suas preferencias ficam salvas neste navegador.");
+      loadPurchases(user.id);
+      loadSavedLooks(user);
+    }
+
+    async function loadPurchases(userId) {
+      const purchases = await NCW.request(`/users/${userId}/purchases`);
+      purchasesBox.innerHTML = purchases.length ? "" : '<p class="muted">Nenhuma compra registrada.</p>';
+      purchases.forEach((purchase) => {
+        const item = document.createElement("article");
+        item.className = "transaction-item";
+        item.innerHTML = `
+          <div class="icon-action"><span aria-hidden="true">NCW</span></div>
+          <div><h3>${purchase.title}</h3><span class="muted">${purchase.id} · ${purchase.createdAt} · ${purchase.status}</span></div>
+          <strong>${NCW.money(purchase.total)}</strong>
+        `;
+        purchasesBox.appendChild(item);
+      });
+    }
+
+    async function loadSavedLooks(user) {
+      const ids = (user.savedLooks || "").split(",").filter(Boolean);
+      const looks = await NCW.request("/looks");
+      const selected = looks.filter((look) => ids.includes(look.id));
+      savedLooksBox.innerHTML = selected.length ? "" : '<p class="muted">Nenhum look salvo ainda.</p>';
+      selected.forEach((look) => {
+        const card = document.createElement("article");
+        card.className = "panel product-card";
+        card.innerHTML = `
+          <img class="cart-thumb" src="${look.image}" alt="${look.title}" style="width:100%; height:160px; object-fit:cover;" />
+          <div class="look-body"><h2>${look.title}</h2><span class="muted">${look.author}</span></div>
+        `;
+        savedLooksBox.appendChild(card);
+      });
+    }
+
+    loginForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const action = event.submitter.dataset.authAction;
+      const payload = Object.fromEntries(new FormData(loginForm).entries());
+      try {
+        const user = action === "create"
+          ? await NCW.request("/users", { method: "POST", body: JSON.stringify(payload) })
+          : await NCW.request("/sessions", { method: "POST", body: JSON.stringify(payload) });
+        applyUser(user);
+      } catch (error) {
+        setMessage(error.message === "login_exists" ? "Esse login ja existe." : "Nao foi possivel entrar com esses dados.");
+      }
+    });
+
+    document.querySelector("[data-google-login]").addEventListener("click", async () => {
+      setMessage("Abrindo login Google demo...");
+      try {
+        const user = await NCW.signInWithGoogleDemo();
+        applyUser(user);
+        setMessage("Login Google demo ativo nesta versao estatica.");
+      } catch (error) {
+        setMessage("Nao foi possivel iniciar o login Google demo.");
+      }
+    });
+
+    settingsForm.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      if (!activeUser) {
+        setMessage("Entre em uma conta antes de salvar preferencias.");
+        return;
+      }
+      const payload = Object.fromEntries(new FormData(settingsForm).entries());
+      payload.theme = activeTheme;
+      payload.accent = activeAccent;
+      payload.savedLooks = activeUser.savedLooks || "";
+      const user = await NCW.request(`/users/${activeUser.id}`, { method: "POST", body: JSON.stringify(payload) });
+      applyUser(user);
+    });
+
+    document.querySelector("[data-change-account]").addEventListener("click", () => {
+      NCW.clearCurrentUser();
+      activeUser = null;
+      profileName.textContent = "Sem conta ativa";
+      profileLogin.textContent = "Use login para salvar preferencias e compras.";
+      purchasesBox.innerHTML = '<p class="muted">Entre em uma conta para carregar suas compras.</p>';
+      setMessage("Conta removida deste navegador. Entre com outra conta.");
+    });
+
+    document.querySelectorAll("[data-theme-choice]").forEach((button) => button.addEventListener("click", () => selectTheme(button.dataset.themeChoice)));
+    document.querySelectorAll("[data-accent-choice]").forEach((button) => button.addEventListener("click", () => selectAccent(button.dataset.accentChoice)));
+
+    selectTheme(activeTheme);
+    selectAccent(activeAccent);
+    NCW.loadCurrentUser().then((user) => user && applyUser(user)).catch(() => setMessage("Nao foi possivel carregar a conta local."));
+  </script>
+</AppLayout>

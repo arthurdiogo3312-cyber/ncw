@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.astro/
+backend/out/
+backend/data/
+backend/*.log
+backend/*.err.log
+*.log
+*.err.log
+.env
+.env.local

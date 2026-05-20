@@ -1,0 +1,30 @@
+---
+import { Home, UserRound, Shirt, Boxes, ShoppingCart } from "@lucide/astro";
+
+const currentPath = Astro.url.pathname;
+const navItems = [
+  { href: "/", label: "Home", Icon: Home },
+  { href: "/conta", label: "Conta", Icon: UserRound },
+  { href: "/looks", label: "Looks", Icon: Shirt },
+  { href: "/montador", label: "Montador", Icon: Boxes },
+  { href: "/carrinho", label: "Carrinho", Icon: ShoppingCart },
+];
+---
+
+<aside class="sidebar" aria-label="Navegacao principal">
+  <a class="brand-mark" href="/" aria-label="NCW Home">
+    <span>NCW</span>
+  </a>
+
+  <nav class="nav-list">
+    {navItems.map(({ href, label, Icon }) => {
+      const active = href === "/" ? currentPath === "/" : currentPath.startsWith(href);
+      return (
+        <a class:list={["nav-link", { active }]} href={href} aria-current={active ? "page" : undefined}>
+          <Icon size={22} stroke-width={2.2} />
+          <span>{label}</span>
+        </a>
+      );
+    })}
+  </nav>
+</aside>

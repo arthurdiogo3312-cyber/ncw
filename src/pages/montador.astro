@@ -1,0 +1,175 @@
+---
+import { RotateCcw, ShoppingBag } from "@lucide/astro";
+import AppLayout from "../layouts/AppLayout.astro";
+---
+
+<AppLayout title="NCW | Montador">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Montador</p>
+      <h1>Monte um look com estoque real.</h1>
+      <p class="lead">Escolha blusas, camisetas, calcas, bermudas, tenis e acessorios. O total e o carrinho atualizam com o catalogo local.</p>
+    </div>
+  </header>
+
+  <section class="builder-v2" data-builder>
+    <aside class="panel wardrobe-panel">
+      <h2>Produtos</h2>
+      <div class="wardrobe-tabs" aria-label="Categorias">
+        <button class="wardrobe-tab active" type="button" data-filter="all">Tudo</button>
+        <button class="wardrobe-tab" type="button" data-filter="top">Blusas</button>
+        <button class="wardrobe-tab" type="button" data-filter="bottom">Baixo</button>
+        <button class="wardrobe-tab" type="button" data-filter="shoe">Tenis</button>
+        <button class="wardrobe-tab" type="button" data-filter="accessory">Acess.</button>
+      </div>
+      <input class="field" data-builder-search placeholder="Buscar no estoque" style="margin-bottom:12px;" />
+      <div class="wardrobe-list" data-wardrobe>
+        <p class="muted">Carregando produtos...</p>
+      </div>
+    </aside>
+
+    <div class="panel avatar-drop-stage">
+      <div class="avatar-manikin" id="avatar-manikin">
+        <div class="drop-zone drop-head">Rosto</div>
+        <div class="drop-zone drop-accessory" data-drop="accessory">Acessorio</div>
+        <div class="drop-zone drop-top" data-drop="top">Blusa</div>
+        <div class="drop-zone drop-bottom" data-drop="bottom">Calca ou bermuda</div>
+        <div class="drop-zone drop-shoe" data-drop="shoe">Tenis</div>
+      </div>
+    </div>
+
+    <aside class="panel fit-panel">
+      <h2>Look atual</h2>
+      <div class="fit-list" id="fit-list">
+        <div class="fit-row"><span>Blusa</span><strong data-slot-name="top">Vazio</strong></div>
+        <div class="fit-row"><span>Calca/Bermuda</span><strong data-slot-name="bottom">Vazio</strong></div>
+        <div class="fit-row"><span>Tenis</span><strong data-slot-name="shoe">Vazio</strong></div>
+        <div class="fit-row"><span>Acessorio</span><strong data-slot-name="accessory">Vazio</strong></div>
+        <div class="summary-row total"><span>Total</span><strong id="fit-total">R$ 0,00</strong></div>
+      </div>
+      <div class="toolbar" style="margin-top:16px;">
+        <button class="btn" type="button" data-clear><RotateCcw size={18} /> Limpar</button>
+        <button class="btn primary" type="button" data-buy><ShoppingBag size={18} /> Enviar ao carrinho</button>
+      </div>
+      <p class="notice" data-builder-message style="margin-top:14px;">Clique em uma peca ou arraste para o avatar.</p>
+    </aside>
+  </section>
+
+  <script>
+    const selected = {};
+    const wardrobe = document.querySelector("[data-wardrobe]");
+    const zones = document.querySelectorAll("[data-drop]");
+    const total = document.getElementById("fit-total");
+    const search = document.querySelector("[data-builder-search]");
+    const message = document.querySelector("[data-builder-message]");
+    let products = [];
+    let activeFilter = "all";
+
+    function partFor(item) {
+      const category = item.category.toLowerCase();
+      if (category.includes("tenis")) return "shoe";
+      if (category.includes("acessor")) return "accessory";
+      if (category.includes("calca") || category.includes("bermuda")) return "bottom";
+      return "top";
+    }
+
+    function itemPayload(item) {
+      return { id: item.id, part: partFor(item), name: item.name, price: Number(item.price), color: item.color, category: item.category };
+    }
+
+    function renderWardrobe() {
+      const term = search.value.trim().toLowerCase();
+      const filtered = products.filter((item) => {
+        const part = partFor(item);
+        const text = `${item.name} ${item.category}`.toLowerCase();
+        return (activeFilter === "all" || part === activeFilter) && (!term || text.includes(term));
+      });
+      wardrobe.innerHTML = filtered.length ? "" : '<p class="muted">Nenhum produto nessa categoria.</p>';
+      filtered.forEach((item) => {
+        const payload = itemPayload(item);
+        const card = document.createElement("button");
+        card.className = "cloth-card";
+        card.type = "button";
+        card.draggable = true;
+        card.dataset.item = JSON.stringify(payload);
+        card.innerHTML = `
+          <span class="cloth-icon" style="--cloth-color:${item.color}"></span>
+          <span><strong>${item.name}</strong><br /><span class="muted">${item.category} · ${NCW.money(item.price)}</span></span>
+        `;
+        card.addEventListener("click", () => applyItem(payload));
+        card.addEventListener("dragstart", (event) => event.dataTransfer.setData("application/json", JSON.stringify(payload)));
+        wardrobe.appendChild(card);
+      });
+    }
+
+    function updateTotal() {
+      const sum = Object.values(selected).reduce((acc, current) => acc + Number(current.price), 0);
+      total.textContent = NCW.money(sum);
+    }
+
+    function applyItem(item) {
+      selected[item.part] = item;
+      const zone = document.querySelector(`[data-drop="${item.part}"]`);
+      const label = document.querySelector(`[data-slot-name="${item.part}"]`);
+      zone.style.setProperty(`--${item.part}-color`, item.color);
+      zone.classList.add("filled");
+      zone.textContent = item.name;
+      label.textContent = item.name;
+      updateTotal();
+    }
+
+    zones.forEach((zone) => {
+      zone.addEventListener("dragover", (event) => {
+        event.preventDefault();
+        zone.classList.add("drag-over");
+      });
+      zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+      zone.addEventListener("drop", (event) => {
+        event.preventDefault();
+        zone.classList.remove("drag-over");
+        const item = JSON.parse(event.dataTransfer.getData("application/json"));
+        if (item.part === zone.dataset.drop) applyItem(item);
+      });
+    });
+
+    document.querySelectorAll("[data-filter]").forEach((tab) => {
+      tab.addEventListener("click", () => {
+        document.querySelectorAll("[data-filter]").forEach((item) => item.classList.toggle("active", item === tab));
+        activeFilter = tab.dataset.filter;
+        renderWardrobe();
+      });
+    });
+
+    search.addEventListener("input", renderWardrobe);
+
+    document.querySelector("[data-clear]").addEventListener("click", () => {
+      Object.keys(selected).forEach((key) => delete selected[key]);
+      zones.forEach((zone) => {
+        zone.classList.remove("filled");
+        zone.style.removeProperty(`--${zone.dataset.drop}-color`);
+        zone.textContent = zone.dataset.drop === "top" ? "Blusa" : zone.dataset.drop === "bottom" ? "Calca ou bermuda" : zone.dataset.drop === "shoe" ? "Tenis" : "Acessorio";
+      });
+      document.querySelectorAll("[data-slot-name]").forEach((slot) => (slot.textContent = "Vazio"));
+      updateTotal();
+    });
+
+    document.querySelector("[data-buy]").addEventListener("click", () => {
+      const items = Object.values(selected);
+      if (!items.length) {
+        message.textContent = "Escolha pelo menos uma peca.";
+        return;
+      }
+      items.forEach((item) => NCW.addToCart({ id: item.id, name: item.name, price: item.price, color: item.color, category: item.category }));
+      message.textContent = "Look enviado para o carrinho.";
+    });
+
+    NCW.request("/inventory")
+      .then((items) => {
+        products = items;
+        renderWardrobe();
+      })
+      .catch(() => {
+        wardrobe.innerHTML = '<p class="muted">Nao foi possivel carregar o catalogo local.</p>';
+      });
+  </script>
+</AppLayout>

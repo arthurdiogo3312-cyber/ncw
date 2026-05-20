@@ -1,0 +1,100 @@
+---
+import AppLayout from "../layouts/AppLayout.astro";
+---
+
+<AppLayout title="NCW | Looks">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Catalogo</p>
+      <h1>Produtos reais do estoque.</h1>
+      <p class="lead">Catalogo estatico com produtos, precos e disponibilidade. Adicione no carrinho ou use no montador.</p>
+    </div>
+    <a class="btn primary" href="/montador">Montar look</a>
+  </header>
+
+  <section class="catalog-toolbar panel">
+    <input class="field" data-search placeholder="Buscar produto" />
+    <select data-category>
+      <option value="all">Todas categorias</option>
+      <option>Camisetas</option>
+      <option>Blusas</option>
+      <option>Moletons</option>
+      <option>Calcas</option>
+      <option>Bermudas</option>
+      <option>Tenis</option>
+      <option>Acessorios</option>
+    </select>
+  </section>
+
+  <section class="catalog-grid" data-catalog>
+    <article class="panel product-card"><p class="muted">Carregando produtos...</p></article>
+  </section>
+
+  <script>
+    const catalog = document.querySelector("[data-catalog]");
+    const search = document.querySelector("[data-search]");
+    const category = document.querySelector("[data-category]");
+    let products = [];
+
+    function partFor(product) {
+      const name = product.category.toLowerCase();
+      if (name.includes("tenis")) return "shoe";
+      if (name.includes("acessor")) return "accessory";
+      if (name.includes("calca") || name.includes("bermuda")) return "bottom";
+      return "top";
+    }
+
+    function render() {
+      const term = search.value.trim().toLowerCase();
+      const selected = category.value;
+      const filtered = products.filter((item) => {
+        const matchesText = !term || item.name.toLowerCase().includes(term) || item.category.toLowerCase().includes(term);
+        const matchesCategory = selected === "all" || item.category === selected;
+        return matchesText && matchesCategory;
+      });
+
+      catalog.innerHTML = filtered.length ? "" : '<article class="panel product-card"><p class="muted">Nenhum produto encontrado.</p></article>';
+      filtered.forEach((item) => {
+        const card = document.createElement("article");
+        card.className = "panel product-card";
+        card.style.setProperty("--item-color", item.color);
+        const image = NCW.imageForProduct(item);
+        card.innerHTML = `
+          <div class="product-media">
+            <img src="${image}" alt="${item.name}" loading="lazy" />
+            <span class="status-pill">${item.status}</span>
+          </div>
+          <div class="look-body">
+            <div class="look-title-row">
+              <div><h2>${item.name}</h2><span class="muted">${item.category} · ${item.stock} un.</span></div>
+              <strong>${NCW.money(item.price)}</strong>
+            </div>
+            <div class="tag-row"><span class="tag">Classe: ${partFor(item)}</span><span class="tag">Demo estatica</span></div>
+            <button class="btn" type="button" data-cart="${item.id}" style="margin-top:14px;"><span aria-hidden="true">+</span> Adicionar</button>
+          </div>
+        `;
+        catalog.appendChild(card);
+      });
+    }
+
+    catalog.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-cart]");
+      if (!button) return;
+      const product = products.find((item) => item.id === button.dataset.cart);
+      NCW.addToCart({ id: product.id, name: product.name, price: product.price, color: product.color, category: product.category, image: NCW.imageForProduct(product) });
+      button.innerHTML = "Adicionado";
+    });
+
+    search.addEventListener("input", render);
+    category.addEventListener("change", render);
+
+    NCW.request("/inventory")
+      .then((items) => {
+        products = items;
+        render();
+      })
+      .catch(() => {
+        catalog.innerHTML = '<article class="panel product-card"><p class="muted">Nao foi possivel carregar o catalogo local.</p></article>';
+      });
+  </script>
+</AppLayout>

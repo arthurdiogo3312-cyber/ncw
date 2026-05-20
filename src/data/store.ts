@@ -1,0 +1,78 @@
+export const lookFeed = [
+  {
+    id: "look-urban-rain",
+    title: "Urban rain",
+    author: "Marina Costa",
+    likes: 482,
+    height: "tall",
+    image: "https://images.pexels.com/photos/33469138/pexels-photo-33469138.jpeg?auto=compress&cs=tinysrgb&w=900",
+    tags: ["street", "neutro", "oversized"],
+    price: 389.7,
+  },
+  {
+    id: "look-training-day",
+    title: "Training day",
+    author: "Rafael Nunes",
+    likes: 318,
+    height: "medium",
+    image: "https://images.pexels.com/photos/4004222/pexels-photo-4004222.jpeg?auto=compress&cs=tinysrgb&w=900",
+    tags: ["fitness", "leve"],
+    price: 299.9,
+  },
+  {
+    id: "look-city-core",
+    title: "City core",
+    author: "Leo Andrade",
+    likes: 721,
+    height: "tall",
+    image: "https://images.pexels.com/photos/29212401/pexels-photo-29212401.jpeg?auto=compress&cs=tinysrgb&w=900",
+    tags: ["urbano", "noite"],
+    price: 459.8,
+  },
+  {
+    id: "look-soft-office",
+    title: "Soft office",
+    author: "Bianca Torres",
+    likes: 264,
+    height: "short",
+    image: "https://images.pexels.com/photos/5709661/pexels-photo-5709661.jpeg?auto=compress&cs=tinysrgb&w=900",
+    tags: ["smart", "minimal"],
+    price: 519.4,
+  },
+  {
+    id: "look-weekend",
+    title: "Weekend drop",
+    author: "Caio Lima",
+    likes: 399,
+    height: "medium",
+    image: "https://images.pexels.com/photos/6311394/pexels-photo-6311394.jpeg?auto=compress&cs=tinysrgb&w=900",
+    tags: ["casual", "denim"],
+    price: 349.5,
+  },
+  {
+    id: "look-tonal",
+    title: "Tonal layers",
+    author: "Duda Alves",
+    likes: 611,
+    height: "short",
+    image: "https://images.pexels.com/photos/7671168/pexels-photo-7671168.jpeg?auto=compress&cs=tinysrgb&w=900",
+    tags: ["camadas", "inverno"],
+    price: 679.0,
+  },
+];
+
+export const inventory = [
+  { id: "tee-01", name: "Camiseta Box NCW", category: "Camisetas", stock: 42, price: 109.9, color: "#f4f1ea", status: "Ativo" },
+  { id: "hood-02", name: "Hoodie Graphite", category: "Moletons", stock: 18, price: 219.9, color: "#52616f", status: "Ativo" },
+  { id: "blouse-06", name: "Blusa Rib Studio", category: "Blusas", stock: 30, price: 159.9, color: "#d8bda8", status: "Ativo" },
+  { id: "pants-03", name: "Cargo Sand", category: "Calcas", stock: 25, price: 249.9, color: "#b4a68b", status: "Ativo" },
+  { id: "short-07", name: "Bermuda Utility", category: "Bermudas", stock: 16, price: 149.9, color: "#8c927d", status: "Ativo" },
+  { id: "shoe-04", name: "Sneaker Cloud", category: "Tenis", stock: 12, price: 329.9, color: "#e7edf1", status: "Baixo estoque" },
+  { id: "cap-05", name: "Bone Logo", category: "Acessorios", stock: 9, price: 89.9, color: "#2f3437", status: "Baixo estoque" },
+];
+
+export const transactions = [
+  { id: "NCW-1029", label: "Pedido Urban rain", date: "12 Maio 2026", status: "Pago", value: 389.7 },
+  { id: "NCW-1021", label: "Pedido Training day", date: "09 Maio 2026", status: "Enviado", value: 299.9 },
+  { id: "NCW-1008", label: "Credito de devolucao", date: "01 Maio 2026", status: "Concluido", value: -89.9 },
+];

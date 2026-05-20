@@ -1,0 +1,81 @@
+---
+import { Heart, ShoppingBag, SlidersHorizontal } from "@lucide/astro";
+import AppLayout from "../layouts/AppLayout.astro";
+import { lookFeed } from "../data/store";
+---
+
+<AppLayout title="NCW | Home">
+  <header class="page-header hero-commerce">
+    <div class="hero-copy">
+      <p class="kicker">NCW Store Demo</p>
+      <h1>Looks reais para descobrir, salvar e comprar.</h1>
+      <p class="lead">
+        Um e-commerce social estatico com feed visual, carrinho, conta demo, compras e catalogo local.
+      </p>
+    </div>
+    <div class="hero-visual" aria-label="Editorial NCW">
+      <img src="https://images.pexels.com/photos/7679731/pexels-photo-7679731.jpeg?auto=compress&cs=tinysrgb&w=1200" alt="Editorial de moda urbana NCW" />
+      <div class="hero-stat">
+        <strong>7 produtos</strong>
+        <span>catalogo estatico</span>
+      </div>
+    </div>
+    <div class="toolbar" aria-label="Filtros do feed">
+      <button class="btn" type="button"><SlidersHorizontal size={18} /> Filtrar</button>
+      <span class="chip">Street</span>
+      <span class="chip">Fitness</span>
+      <span class="chip">Smart casual</span>
+    </div>
+  </header>
+
+  <section class="feed-grid" aria-label="Feed de looks">
+    {lookFeed.map((look) => (
+      <article class:list={["look-card", look.height]}>
+        <div class="look-media">
+          <img src={look.image} alt={`Look ${look.title}`} loading="lazy" />
+          <div class="look-overlay">
+            <button class="icon-action" type="button" data-save-look={look.id} aria-label={`Salvar ${look.title}`}><Heart size={19} /></button>
+            <button class="icon-action" type="button" data-buy-look={look.id} data-name={look.title} data-price={look.price} aria-label={`Comprar ${look.title}`}><ShoppingBag size={19} /></button>
+          </div>
+        </div>
+        <div class="look-body">
+          <div class="look-title-row">
+            <div>
+              <h2>{look.title}</h2>
+              <span class="muted">por {look.author}</span>
+            </div>
+            <strong>R$ {look.price.toFixed(2).replace(".", ",")}</strong>
+          </div>
+          <div class="tag-row">
+            {look.tags.map((tag) => <span class="tag">{tag}</span>)}
+            <span class="tag">{look.likes} curtidas</span>
+          </div>
+        </div>
+      </article>
+    ))}
+  </section>
+
+  <script>
+    document.addEventListener("click", async (event) => {
+      const save = event.target.closest("[data-save-look]");
+      const buy = event.target.closest("[data-buy-look]");
+      if (buy) {
+        const image = buy.closest(".look-card").querySelector("img")?.src;
+        NCW.addToCart({ id: buy.dataset.buyLook, name: buy.dataset.name, price: Number(buy.dataset.price), category: "Look completo", color: "#2f5d50", image });
+        buy.classList.add("active");
+      }
+      if (save) {
+        const user = await NCW.loadCurrentUser().catch(() => null);
+        if (!user) {
+          window.location.href = "/conta";
+          return;
+        }
+        const ids = new Set((user.savedLooks || "").split(",").filter(Boolean));
+        ids.add(save.dataset.saveLook);
+        const updated = await NCW.request(`/users/${user.id}`, { method: "POST", body: JSON.stringify({ savedLooks: Array.from(ids).join(",") }) });
+        NCW.setCurrentUser(updated);
+        save.classList.add("active");
+      }
+    });
+  </script>
+</AppLayout>

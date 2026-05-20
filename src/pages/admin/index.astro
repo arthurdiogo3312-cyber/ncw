@@ -1,0 +1,163 @@
+---
+import { Plus, Save, Trash2 } from "@lucide/astro";
+import AppLayout from "../../layouts/AppLayout.astro";
+---
+
+<AppLayout title="NCW | Admin">
+  <header class="page-header">
+    <div>
+      <p class="kicker">Admin</p>
+      <h1>Produtos, precos e estoque.</h1>
+      <p class="lead">Cadastre, edite e remova produtos nesta demo. As alteracoes ficam salvas no navegador.</p>
+    </div>
+  </header>
+
+  <section class="content-grid">
+    <div class="panel summary">
+      <h2>Novo produto</h2>
+      <form class="form-grid" data-product-form>
+        <input type="hidden" name="id" />
+        <label>Nome<input class="field" name="name" placeholder="Ex: Jaqueta Tech" autocomplete="off" required /></label>
+        <label>Categoria
+          <select name="category">
+            <option>Camisetas</option>
+            <option>Blusas</option>
+            <option>Moletons</option>
+            <option>Calcas</option>
+            <option>Bermudas</option>
+            <option>Tenis</option>
+            <option>Acessorios</option>
+          </select>
+        </label>
+        <label>Preco<input class="field" name="price" inputmode="decimal" placeholder="199,90" required /></label>
+        <label>Estoque<input class="field" name="stock" inputmode="numeric" placeholder="20" required /></label>
+        <label>Cor<input class="field" name="color" type="color" value="#2f3437" /></label>
+        <label>Status
+          <select name="status">
+            <option>Ativo</option>
+            <option>Baixo estoque</option>
+            <option>Pausado</option>
+          </select>
+        </label>
+        <div class="toolbar">
+          <button class="btn primary" type="submit"><Plus size={18} /> Salvar produto</button>
+          <button class="btn" type="button" data-reset-form><Save size={18} /> Novo</button>
+        </div>
+      </form>
+      <p class="notice" data-admin-message style="margin-top:14px;">Dados carregados do armazenamento local.</p>
+    </div>
+
+    <div class="panel" style="overflow:auto;">
+      <table class="admin-table">
+        <thead>
+          <tr>
+            <th>Item</th>
+            <th>Categoria</th>
+            <th>Estoque</th>
+            <th>Status</th>
+            <th>Preco</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody data-products-table>
+          <tr><td colspan="6">Carregando...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <script>
+    const form = document.querySelector("[data-product-form]");
+    const table = document.querySelector("[data-products-table]");
+    const message = document.querySelector("[data-admin-message]");
+    let products = [];
+
+    function statusFor(stock) {
+      return Number(stock) <= 12 ? "Baixo estoque" : "Ativo";
+    }
+
+    function resetForm() {
+      form.reset();
+      form.id.value = "";
+      form.color.value = "#2f3437";
+      message.textContent = "Novo produto.";
+    }
+
+    function fillForm(product) {
+      form.id.value = product.id;
+      form.name.value = product.name;
+      form.category.value = product.category;
+      form.price.value = product.price;
+      form.stock.value = product.stock;
+      form.color.value = product.color || "#2f3437";
+      form.status.value = product.status || statusFor(product.stock);
+      message.textContent = `Editando ${product.name}.`;
+    }
+
+    function render() {
+      table.innerHTML = "";
+      products.forEach((item) => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td><strong>${item.name}</strong></td>
+          <td>${item.category}</td>
+          <td>${item.stock}</td>
+          <td>${item.status}</td>
+          <td>${NCW.money(item.price)}</td>
+          <td class="table-actions">
+            <button class="btn" type="button" data-edit="${item.id}">Editar</button>
+            <button class="icon-action" type="button" data-remove="${item.id}" aria-label="Remover ${item.name}"></button>
+          </td>
+        `;
+        row.querySelector("[data-remove]").innerHTML = `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M8 6V4h8v2"/><path d="M19 6l-1 14H6L5 6"/></svg>`;
+        table.appendChild(row);
+      });
+    }
+
+    async function loadProducts() {
+      products = await NCW.request("/inventory");
+      render();
+    }
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      const payload = Object.fromEntries(new FormData(form).entries());
+      payload.stock = Number(payload.stock);
+      payload.price = Number(String(payload.price).replace(",", "."));
+      payload.status = payload.status || statusFor(payload.stock);
+      try {
+        if (payload.id) {
+          const id = payload.id;
+          delete payload.id;
+          await NCW.request(`/inventory/${id}`, { method: "POST", body: JSON.stringify(payload) });
+          message.textContent = "Produto atualizado.";
+        } else {
+          delete payload.id;
+          await NCW.request("/inventory", { method: "POST", body: JSON.stringify(payload) });
+          message.textContent = "Produto adicionado.";
+        }
+        resetForm();
+        await loadProducts();
+      } catch (error) {
+        message.textContent = "Nao foi possivel salvar o produto.";
+      }
+    });
+
+    table.addEventListener("click", async (event) => {
+      const edit = event.target.closest("[data-edit]");
+      const remove = event.target.closest("[data-remove]");
+      if (edit) {
+        const product = products.find((item) => item.id === edit.dataset.edit);
+        if (product) fillForm(product);
+      }
+      if (remove) {
+        await NCW.request(`/inventory/${remove.dataset.remove}`, { method: "DELETE" });
+        message.textContent = "Produto removido.";
+        await loadProducts();
+      }
+    });
+
+    document.querySelector("[data-reset-form]").addEventListener("click", resetForm);
+    loadProducts().catch(() => (message.textContent = "Nao foi possivel carregar o armazenamento local."));
+  </script>
+</AppLayout>
